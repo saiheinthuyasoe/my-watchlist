@@ -46,6 +46,7 @@ export interface AniListMedia {
   format: "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC" | null;
   countryOfOrigin: string | null;
   isAdult: boolean;
+  startDate?: { year: number | null; month: number | null; day: number | null } | null;
 
   // Present on detail responses
   trailer?: { id: string; site: string } | null;

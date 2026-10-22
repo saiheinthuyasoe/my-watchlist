@@ -51,6 +51,11 @@ const MEDIA_FIELDS = `
   status
   season
   seasonYear
+  startDate {
+    year
+    month
+    day
+  }
   averageScore
   popularity
   genres
@@ -346,15 +351,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "A valid id is required" }, { status: 400 });
     }
 
-    const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
-      (entry) => entry.id === id
-    );
-    if (local) {
-      const body = { Media: local };
-      writeCache(cacheKey, body);
-      return json(body, "MISS");
-    }
-
+    // Always fetch from AniList to get complete detailed information (studios, source, etc.)
+    // Don't use fallback data for details as it lacks comprehensive fields
     try {
       const data = (await anilistRequest(
         `query ($id: Int) {
@@ -364,12 +362,29 @@ export async function GET(request: Request) {
       )) as { Media: AniListMedia | null };
 
       if (!data?.Media) {
+        // Try fallback only if AniList doesn't have it
+        const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
+          (entry) => entry.id === id
+        );
+        if (local) {
+          const body = { Media: local };
+          writeCache(cacheKey, body);
+          return json(body, "MISS");
+        }
         return NextResponse.json({ Media: null }, { status: 404 });
       }
       writeCache(cacheKey, data);
       return json(data, "MISS");
     } catch (error) {
-      console.warn("AniList detail failed:", error);
+      console.warn("AniList detail failed, trying fallback:", error);
+      // Use fallback as last resort
+      const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
+        (entry) => entry.id === id
+      );
+      if (local) {
+        const body = { Media: local };
+        return json(body, "MISS");
+      }
       return NextResponse.json(
         { error: "Could not load this title right now" },
         { status: 502 }

@@ -1,0 +1,114 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function incomingData() {
+      return request.resource.data;
+    }
+    
+    function existingData() {
+      return resource.data;
+    }
+    
+    // Watchlist collection rules
+    match /watchlist/{docId} {
+      // Users can read their own watchlist items
+      allow read: if isSignedIn() && isOwner(resource.data.userId);
+      
+      // Users can create watchlist items for themselves
+      allow create: if isSignedIn() 
+                    && isOwner(incomingData().userId)
+                    && validateWatchlistCreate();
+      
+      // Users can update their own watchlist items (only specific fields)
+      allow update: if isSignedIn() 
+                    && isOwner(existingData().userId)
+                    && validateWatchlistUpdate();
+      
+      // Users can delete their own watchlist items
+      allow delete: if isSignedIn() && isOwner(resource.data.userId);
+      
+      // Validation for creating new watchlist items
+      function validateWatchlistCreate() {
+        let data = incomingData();
+        return data.keys().hasAll([
+          'userId', 'anilistId', 'category', 'title', 'titleEnglish', 'titleNative',
+          'coverImage', 'bannerImage', 'description', 'totalEpisodes', 'duration',
+          'seasonYear', 'format', 'genres', 'countryOfOrigin', 'airingStatus',
+          'nextAiringEpisode', 'startDate', 'studios', 'averageScore', 'source',
+          'status', 'currentEpisode', 'userScore', 'notes', 'nickname', 'createdAt', 'updatedAt'
+        ])
+        && data.userId is string
+        && data.anilistId is int
+        && data.anilistId > 0
+        && data.category in ['anime', 'donghua']
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 500
+        && (data.titleEnglish == null || (data.titleEnglish is string && data.titleEnglish.size() <= 500))
+        && data.titleNative is string
+        && data.titleNative.size() <= 500
+        && data.coverImage is string
+        && data.coverImage.size() <= 1000
+        && (data.bannerImage == null || (data.bannerImage is string && data.bannerImage.size() <= 1000))
+        && (data.description == null || (data.description is string && data.description.size() <= 10000))
+        && (data.totalEpisodes == null || (data.totalEpisodes is int && data.totalEpisodes >= 0 && data.totalEpisodes <= 10000))
+        && (data.duration == null || (data.duration is int && data.duration >= 0 && data.duration <= 1000))
+        && (data.seasonYear == null || (data.seasonYear is int && data.seasonYear >= 1900 && data.seasonYear <= 2100))
+        && (data.format == null || data.format is string)
+        && data.genres is list
+        && data.genres.size() <= 50
+        && (data.countryOfOrigin == null || data.countryOfOrigin is string)
+        && (data.airingStatus == null || data.airingStatus in ['FINISHED', 'RELEASING', 'NOT_YET_RELEASED', 'CANCELLED', 'HIATUS'])
+        && (data.nextAiringEpisode == null || (data.nextAiringEpisode is map && data.nextAiringEpisode.keys().hasAll(['episode', 'timeUntilAiring'])))
+        && (data.startDate == null || (data.startDate is map && data.startDate.keys().hasAll(['year', 'month', 'day'])))
+        && data.studios is list
+        && data.studios.size() <= 20
+        && (data.averageScore == null || (data.averageScore is int && data.averageScore >= 0 && data.averageScore <= 100))
+        && (data.source == null || data.source is string)
+        && data.status in ['watching', 'completed', 'plan_to_watch', 'on_hold', 'dropped']
+        && data.currentEpisode is int
+        && data.currentEpisode >= 0
+        && data.currentEpisode <= 100000
+        && (data.userScore == null || (data.userScore is int && data.userScore >= 1 && data.userScore <= 10))
+        && data.notes is string
+        && data.notes.size() <= 5000
+        && data.nickname is string
+        && data.nickname.size() <= 100
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+      }
+      
+      // Validation for updating watchlist items
+      function validateWatchlistUpdate() {
+        let data = incomingData();
+        let existing = existingData();
+        
+        // Only allow updating specific user-editable fields
+        return data.diff(existing).affectedKeys().hasOnly(['status', 'currentEpisode', 'userScore', 'notes', 'nickname', 'updatedAt'])
+        && data.userId == existing.userId  // userId cannot change
+        && data.anilistId == existing.anilistId  // anilistId cannot change
+        && data.category == existing.category  // category cannot change
+        && data.status in ['watching', 'completed', 'plan_to_watch', 'on_hold', 'dropped']
+        && data.currentEpisode is int
+        && data.currentEpisode >= 0
+        && data.currentEpisode <= 100000
+        && (data.userScore == null || (data.userScore is int && data.userScore >= 1 && data.userScore <= 10))
+        && data.notes is string
+        && data.notes.size() <= 5000
+        && data.nickname is string
+        && data.nickname.size() <= 100
+        && data.updatedAt is timestamp;
+      }
+    }
+  }
+}

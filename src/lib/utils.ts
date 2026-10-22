@@ -30,6 +30,10 @@ export function stripHtml(html: string): string {
 }
 
 export function getProgressPercent(current: number, total: number | null): number {
-  if (!total) return 0;
+  if (total === null) {
+    // For movies/content without episode count, progress is binary (watched or not)
+    return current > 0 ? 100 : 0;
+  }
+  if (total === 0) return 0;
   return Math.min(100, Math.round((current / total) * 100));
 }

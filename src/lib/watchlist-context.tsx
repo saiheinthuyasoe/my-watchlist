@@ -38,7 +38,8 @@ interface WatchlistContextValue {
   addItem: (
     media: AniListMedia,
     category: AnimeCategory,
-    status?: WatchStatus
+    status?: WatchStatus,
+    currentEpisode?: number
   ) => Promise<boolean>;
   updateItem: (item: WatchlistItem, patch: WatchlistUpdate) => Promise<void>;
   bumpEpisode: (item: WatchlistItem, delta: number) => Promise<void>;
@@ -114,7 +115,8 @@ export function WatchlistProvider({ children }: { children: React.ReactNode }) {
     async (
       media: AniListMedia,
       category: AnimeCategory,
-      status: WatchStatus = "plan_to_watch"
+      status: WatchStatus = "plan_to_watch",
+      currentEpisode?: number
     ) => {
       if (!user) {
         toast.info("Sign in required", "Create a free account to start tracking.");
@@ -125,7 +127,7 @@ export function WatchlistProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       try {
-        await addToWatchlist(user.uid, media, category, status);
+        await addToWatchlist(user.uid, media, category, status, currentEpisode);
         toast.success(
           "Added to watchlist",
           media.title.english ?? media.title.romaji
@@ -190,8 +192,14 @@ export function WatchlistProvider({ children }: { children: React.ReactNode }) {
     async (item: WatchlistItem, status: WatchStatus) => {
       if (item.status === status) return;
       const patch: WatchlistUpdate = { status };
-      if (status === "completed" && item.totalEpisodes) {
-        patch.currentEpisode = item.totalEpisodes;
+      if (status === "completed") {
+        if (item.totalEpisodes) {
+          // Series: mark all episodes as watched
+          patch.currentEpisode = item.totalEpisodes;
+        } else if (item.currentEpisode === 0) {
+          // Movie: set to 1 to indicate watched
+          patch.currentEpisode = 1;
+        }
       }
       await updateItem(item, patch);
       toast.success(`Moved to ${STATUS_LABELS[status]}`);

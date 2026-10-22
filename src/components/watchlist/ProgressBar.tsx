@@ -25,7 +25,10 @@ export function ProgressBar({
       {showLabel && (
         <div className="flex items-center justify-between text-xs text-muted">
           <span>
-            {current} {total ? `/ ${total}` : ""} episodes
+            {total === null 
+              ? `${current} episodes`
+              : `${current} / ${total} episodes`
+            }
           </span>
           <span className="tabular-nums">{percent}%</span>
         </div>
@@ -40,7 +43,11 @@ export function ProgressBar({
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={`${current} of ${total ?? "unknown"} episodes watched`}
+        aria-label={
+          total === null 
+            ? `${current} episodes watched`
+            : `${current} of ${total} episodes watched`
+        }
       >
         <div
           className={cn(

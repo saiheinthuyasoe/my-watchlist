@@ -51,8 +51,18 @@ export function WatchlistCard({ item, onEdit, onDelete, onBump, priority = false
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent" />
 
-        <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
+        <div className="absolute left-2 top-2 flex gap-1.5 sm:left-3 sm:top-3">
           <StatusBadge status={item.status} />
+          {item.airingStatus === "RELEASING" && (
+            <span className="rounded-full bg-sky-500/90 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur sm:text-[10px]">
+              Airing
+            </span>
+          )}
+          {item.airingStatus === "NOT_YET_RELEASED" && (
+            <span className="rounded-full bg-violet-500/90 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white backdrop-blur sm:text-[10px]">
+              Upcoming
+            </span>
+          )}
         </div>
 
         {item.userScore !== null && (
@@ -65,10 +75,12 @@ export function WatchlistCard({ item, onEdit, onDelete, onBump, priority = false
         <div className="pointer-events-none absolute inset-x-2 bottom-2 bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg p-2 sm:inset-x-3 sm:bottom-3 sm:p-2.5">
           <div className="flex items-center justify-between text-[9px] font-medium text-white/85 sm:text-[10px]">
             <span>
-              {item.currentEpisode}
-              {item.totalEpisodes ? ` / ${item.totalEpisodes}` : ""} ep
+              {item.totalEpisodes === null
+                ? `${item.currentEpisode} ep`
+                : `${item.currentEpisode} / ${item.totalEpisodes} ep`
+              }
             </span>
-            {item.totalEpisodes ? <span>{percent}%</span> : null}
+            <span>{percent}%</span>
           </div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/25 sm:mt-1.5">
             <div
@@ -76,9 +88,14 @@ export function WatchlistCard({ item, onEdit, onDelete, onBump, priority = false
                 "h-full rounded-full transition-[width] duration-500",
                 finished ? "bg-emerald-400" : "bg-gradient-to-r from-violet-400 to-sky-400"
               )}
-              style={{ width: `${item.totalEpisodes ? percent : 0}%` }}
+              style={{ width: `${percent}%` }}
             />
           </div>
+          {item.airingStatus === "RELEASING" && item.nextAiringEpisode && (
+            <div className="mt-1.5 text-[9px] text-sky-300 sm:text-[10px]">
+              Ep {item.nextAiringEpisode.episode} in {Math.ceil(item.nextAiringEpisode.timeUntilAiring / 86400)}d
+            </div>
+          )}
         </div>
       </div>
 

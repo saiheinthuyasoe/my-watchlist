@@ -184,11 +184,29 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
       ? `https://www.youtube.com/watch?v=${media.trailer.id}`
       : null;
 
+  const formatStartDate = (date: { year: number | null; month: number | null; day: number | null } | null | undefined) => {
+    if (!date?.year) return "—";
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    if (date.month && date.day) {
+      return `${months[date.month - 1]} ${date.day}, ${date.year}`;
+    }
+    if (date.month) {
+      return `${months[date.month - 1]} ${date.year}`;
+    }
+    return String(date.year);
+  };
+
   const detailRows = [
+    ...(media.nextAiringEpisode ? [{
+      label: "Airing",
+      value: `Ep ${media.nextAiringEpisode.episode}: ${formatCountdown(media.nextAiringEpisode.timeUntilAiring)}`,
+      highlight: true,
+    }] : []),
     { label: "Format", value: media.format?.replace(/_/g, " ") ?? "—" },
     { label: "Episodes", value: media.episodes ? String(media.episodes) : "Unknown" },
-    { label: "Episode length", value: media.duration ? `${media.duration} min` : "—" },
+    { label: "Episode Duration", value: media.duration ? `${media.duration} mins` : "—" },
     { label: "Status", value: MEDIA_STATUS_LABELS[media.status] ?? media.status },
+    { label: "Start Date", value: formatStartDate(media.startDate) },
     {
       label: "Season",
       value:
@@ -198,8 +216,10 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
             ? String(media.seasonYear)
             : "—",
     },
-    { label: "Studio", value: studios || "—" },
-    { label: "Source", value: media.source?.replace(/_/g, " ").toLowerCase() ?? "—" },
+    { label: "Average Score", value: media.averageScore ? `${media.averageScore}%` : "—" },
+    { label: "Popularity", value: media.popularity ? media.popularity.toLocaleString() : "—" },
+    { label: "Studios", value: studios || "—" },
+    { label: "Source", value: media.source?.replace(/_/g, " ") ?? "—" },
     { label: "Origin", value: media.countryOfOrigin ?? "—" },
   ];
 
@@ -368,12 +388,30 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
               {detailRows.map((row) => (
                 <div key={row.label} className="flex items-baseline justify-between gap-4">
                   <dt className="text-sm text-subtle">{row.label}</dt>
-                  <dd className="truncate text-right text-sm font-medium capitalize text-fg">
+                  <dd className={`truncate text-right text-sm font-medium capitalize ${(row as any).highlight ? 'text-sky-400' : 'text-fg'}`}>
                     {row.value}
                   </dd>
                 </div>
               ))}
             </dl>
+
+            {media.genres.length > 0 && (
+              <div className="mt-5 border-t border-line pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                  Genres
+                </h3>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {media.genres.map((genre) => (
+                    <span
+                      key={genre}
+                      className="rounded-md bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent"
+                    >
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {media.tags.length > 0 && (
               <div className="mt-5 border-t border-line pt-4">
@@ -392,6 +430,28 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
                 </div>
               </div>
             )}
+
+            <div className="mt-5 border-t border-line pt-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                All Titles
+              </h3>
+              <dl className="mt-2 space-y-1.5">
+                <div>
+                  <dt className="inline text-xs text-subtle">Romaji: </dt>
+                  <dd className="inline text-xs text-fg">{media.title.romaji}</dd>
+                </div>
+                {media.title.english && media.title.english !== media.title.romaji && (
+                  <div>
+                    <dt className="inline text-xs text-subtle">English: </dt>
+                    <dd className="inline text-xs text-fg">{media.title.english}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="inline text-xs text-subtle">Native: </dt>
+                  <dd className="inline text-xs text-fg">{media.title.native}</dd>
+                </div>
+              </dl>
+            </div>
 
             <div className="mt-5 flex flex-wrap gap-2 border-t border-line pt-4">
               {trailerUrl && (

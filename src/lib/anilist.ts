@@ -147,19 +147,25 @@ export async function getTrending(
 
 /** Full details for a single title. Returns null if it cannot be found. */
 export async function getMediaById(id: number): Promise<AniListMedia | null> {
-  const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
-    (entry) => entry.id === id
-  );
-  if (local) return local;
-
+  // Always fetch from AniList API first to get complete details (studios, source, etc.)
   try {
     const params = new URLSearchParams({ action: "detail", id: String(id) });
     const response = await fetch(`/api/media?${params.toString()}`);
-    if (!response.ok) return null;
+    if (!response.ok) {
+      // Try fallback as last resort
+      const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
+        (entry) => entry.id === id
+      );
+      return local ?? null;
+    }
     const data = (await response.json()) as { Media: AniListMedia | null };
     return data.Media ?? null;
   } catch (error) {
-    console.warn("AniList detail request failed:", error);
-    return null;
+    console.warn("AniList detail request failed, trying fallback:", error);
+    // Use fallback only if API completely fails
+    const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
+      (entry) => entry.id === id
+    );
+    return local ?? null;
   }
 }

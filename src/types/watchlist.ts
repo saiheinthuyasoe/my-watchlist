@@ -26,6 +26,12 @@ export interface WatchlistItem {
   format: string | null;
   genres: string[];
   countryOfOrigin: string | null;
+  airingStatus: "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS" | null; // Show's airing status from AniList
+  nextAiringEpisode: { episode: number; timeUntilAiring: number } | null; // When next episode airs (for airing shows)
+  startDate: { year: number | null; month: number | null; day: number | null } | null; // When the show first aired
+  studios: string[]; // Main studios that produced the show
+  averageScore: number | null; // AniList average score (0-100)
+  source: string | null; // Source material (MANGA, LIGHT_NOVEL, ORIGINAL, etc.)
 
   // User-specific data
   status: WatchStatus;

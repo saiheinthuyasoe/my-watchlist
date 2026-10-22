@@ -34,7 +34,7 @@ export function WatchlistRow({ item, onEdit, onDelete, onBump }: WatchlistRowPro
             alt="" 
             fill 
             sizes="44px" 
-            quality={90}
+            quality={95}
             className="object-cover" 
           />
         ) : null}
@@ -54,11 +54,26 @@ export function WatchlistRow({ item, onEdit, onDelete, onBump }: WatchlistRowPro
             )}
           </Link>
           <StatusBadge status={item.status} showDot={false} className="shrink-0" />
+          {item.airingStatus === "RELEASING" && (
+            <span className="shrink-0 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-sky-500 border border-sky-500/20">
+              Airing
+            </span>
+          )}
+          {item.airingStatus === "NOT_YET_RELEASED" && (
+            <span className="shrink-0 rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-500 border border-violet-500/20">
+              Upcoming
+            </span>
+          )}
         </div>
         <p className="mt-0.5 truncate text-xs text-subtle">
           {[item.format?.replace(/_/g, " "), item.seasonYear, item.genres[0]]
             .filter(Boolean)
             .join(" · ")}
+          {item.airingStatus === "RELEASING" && item.nextAiringEpisode && (
+            <span className="text-sky-400">
+              {" · "}Ep {item.nextAiringEpisode.episode} in {Math.ceil(item.nextAiringEpisode.timeUntilAiring / 86400)}d
+            </span>
+          )}
         </p>
         <div className="mt-1.5 flex items-center gap-2">
           <ProgressBar
@@ -69,8 +84,10 @@ export function WatchlistRow({ item, onEdit, onDelete, onBump }: WatchlistRowPro
             className="max-w-[240px] flex-1"
           />
           <span className="shrink-0 text-[11px] tabular-nums text-muted">
-            {item.currentEpisode}
-            {item.totalEpisodes ? `/${item.totalEpisodes}` : ""} ep
+            {item.totalEpisodes === null
+              ? `${item.currentEpisode} ep`
+              : `${item.currentEpisode}/${item.totalEpisodes} ep`
+            }
           </span>
         </div>
       </div>

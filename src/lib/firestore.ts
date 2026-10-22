@@ -92,6 +92,12 @@ function mapDoc(snapshot: QueryDocumentSnapshot<DocumentData>): WatchlistItem {
     format: (data.format as string | null) ?? null,
     genres: Array.isArray(data.genres) ? (data.genres as string[]) : [],
     countryOfOrigin: (data.countryOfOrigin as string | null) ?? null,
+    airingStatus: (data.airingStatus as WatchlistItem["airingStatus"]) ?? null,
+    nextAiringEpisode: (data.nextAiringEpisode as WatchlistItem["nextAiringEpisode"]) ?? null,
+    startDate: (data.startDate as WatchlistItem["startDate"]) ?? null,
+    studios: Array.isArray(data.studios) ? (data.studios as string[]) : [],
+    averageScore: typeof data.averageScore === "number" ? data.averageScore : null,
+    source: (data.source as string | null) ?? null,
     status: (data.status as WatchStatus) ?? "plan_to_watch",
     currentEpisode:
       totalEpisodes !== null
@@ -170,15 +176,26 @@ export async function addToWatchlist(
   userId: string,
   media: AniListMedia,
   category: AnimeCategory,
-  status: WatchStatus = "plan_to_watch"
+  status: WatchStatus = "plan_to_watch",
+  currentEpisode?: number
 ): Promise<string> {
   if (await getExistingEntry(userId, media.id)) {
     throw new DuplicateEntryError();
   }
 
-  // Auto-complete progress when adding as completed
+  // Auto-complete progress when adding as completed, or use provided episode
   const totalEpisodes = media.episodes ?? null;
-  const currentEpisode = status === "completed" && totalEpisodes ? totalEpisodes : 0;
+  let initialEpisode = currentEpisode ?? 0;
+  
+  if (status === "completed") {
+    if (totalEpisodes && !currentEpisode) {
+      // Series: set to total episodes
+      initialEpisode = totalEpisodes;
+    } else if (!totalEpisodes && !currentEpisode) {
+      // Movie: set to 1 to indicate watched (will show 100%)
+      initialEpisode = 1;
+    }
+  }
 
   const now = serverTimestamp();
   const docRef = await addDoc(collection(db, COLLECTION), {
@@ -197,8 +214,14 @@ export async function addToWatchlist(
     format: media.format ?? null,
     genres: media.genres ?? [],
     countryOfOrigin: media.countryOfOrigin ?? null,
+    airingStatus: media.status ?? null,
+    nextAiringEpisode: media.nextAiringEpisode ?? null,
+    startDate: media.startDate ?? null,
+    studios: media.studios?.nodes.map(s => s.name) ?? [],
+    averageScore: media.averageScore ?? null,
+    source: media.source ?? null,
     status,
-    currentEpisode,
+    currentEpisode: initialEpisode,
     userScore: null,
     notes: "",
     nickname: "",
