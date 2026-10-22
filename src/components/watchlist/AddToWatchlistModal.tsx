@@ -55,11 +55,12 @@ function AddForm({
     <div className="space-y-5">
       <div className="flex gap-3">
         <div className="relative h-24 w-16 shrink-0 overflow-hidden rounded-lg bg-elevated">
-          {media.coverImage?.medium && (
+          {(media.coverImage?.extraLarge ?? media.coverImage?.large ?? media.coverImage?.medium) && (
             <Image
-              src={media.coverImage.medium}
+              src={media.coverImage.extraLarge ?? media.coverImage.large ?? media.coverImage.medium}
               alt=""
               fill
+              quality={95}
               sizes="64px"
               className="object-cover"
             />

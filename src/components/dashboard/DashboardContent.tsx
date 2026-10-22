@@ -76,7 +76,14 @@ function ContinueCard({
         aria-label={`View ${title}`}
       >
         {item.coverImage && (
-          <Image src={item.coverImage} alt="" fill sizes="54px" className="object-cover" />
+          <Image 
+            src={item.coverImage} 
+            alt="" 
+            fill 
+            sizes="54px" 
+            quality={95}
+            className="object-cover" 
+          />
         )}
       </Link>
       <div className="flex min-w-0 flex-1 flex-col justify-between">

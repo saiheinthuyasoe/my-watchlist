@@ -1143,13 +1143,14 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
               ) : view === "grid" ? (
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                    {displayedList.map((item) => (
+                    {displayedList.map((item, index) => (
                       <WatchlistCard
                         key={item.id}
                         item={item}
                         onEdit={setEditItem}
                         onDelete={setDeleteTarget}
                         onBump={(entry) => void bumpEpisode(entry, 1)}
+                        priority={index < 6}
                       />
                     ))}
                   </div>

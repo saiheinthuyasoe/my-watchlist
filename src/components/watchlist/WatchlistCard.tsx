@@ -13,9 +13,10 @@ interface WatchlistCardProps {
   onEdit: (item: WatchlistItem) => void;
   onDelete: (item: WatchlistItem) => void;
   onBump?: (item: WatchlistItem) => void;
+  priority?: boolean;
 }
 
-export function WatchlistCard({ item, onEdit, onDelete, onBump }: WatchlistCardProps) {
+export function WatchlistCard({ item, onEdit, onDelete, onBump, priority = false }: WatchlistCardProps) {
   const title = item.titleEnglish ?? item.title;
   const percent = getProgressPercent(item.currentEpisode, item.totalEpisodes);
   const finished =
@@ -35,6 +36,8 @@ export function WatchlistCard({ item, onEdit, onDelete, onBump }: WatchlistCardP
               src={item.coverImage}
               alt={title}
               fill
+              priority={priority}
+              fetchPriority={priority ? "high" : undefined}
               quality={95}
               className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 300px"

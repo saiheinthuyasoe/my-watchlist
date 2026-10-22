@@ -92,7 +92,14 @@ function EditWatchlistForm({
       <Select
         label="Status"
         value={status}
-        onChange={(event) => setStatus(event.target.value as WatchStatus)}
+        onChange={(event) => {
+          const newStatus = event.target.value as WatchStatus;
+          setStatus(newStatus);
+          // Auto-complete episodes when marking as completed
+          if (newStatus === "completed" && maxEpisodes && episode < maxEpisodes) {
+            setEpisode(maxEpisodes);
+          }
+        }}
         options={statusOptions()}
       />
 

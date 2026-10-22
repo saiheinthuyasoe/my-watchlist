@@ -176,6 +176,10 @@ export async function addToWatchlist(
     throw new DuplicateEntryError();
   }
 
+  // Auto-complete progress when adding as completed
+  const totalEpisodes = media.episodes ?? null;
+  const currentEpisode = status === "completed" && totalEpisodes ? totalEpisodes : 0;
+
   const now = serverTimestamp();
   const docRef = await addDoc(collection(db, COLLECTION), {
     userId,
@@ -184,17 +188,17 @@ export async function addToWatchlist(
     title: media.title.romaji,
     titleEnglish: media.title.english ?? null,
     titleNative: media.title.native,
-    coverImage: media.coverImage?.large ?? media.coverImage?.medium ?? "",
+    coverImage: media.coverImage?.extraLarge ?? media.coverImage?.large ?? media.coverImage?.medium ?? "",
     bannerImage: media.bannerImage ?? null,
     description: media.description ?? null,
-    totalEpisodes: media.episodes ?? null,
+    totalEpisodes,
     duration: media.duration ?? null,
     seasonYear: media.seasonYear ?? null,
     format: media.format ?? null,
     genres: media.genres ?? [],
     countryOfOrigin: media.countryOfOrigin ?? null,
     status,
-    currentEpisode: 0,
+    currentEpisode,
     userScore: null,
     notes: "",
     nickname: "",

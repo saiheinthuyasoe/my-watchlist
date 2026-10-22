@@ -323,7 +323,14 @@ export function InsightsContent() {
                 >
                   <span className="relative h-9 w-6 shrink-0 overflow-hidden rounded bg-elevated sm:h-11 sm:w-8">
                     {item.coverImage && (
-                      <Image src={item.coverImage} alt="" fill sizes="32px" className="object-cover" />
+                      <Image 
+                        src={item.coverImage} 
+                        alt="" 
+                        fill 
+                        sizes="32px" 
+                        quality={95}
+                        className="object-cover" 
+                      />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">

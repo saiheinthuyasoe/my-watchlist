@@ -314,6 +314,7 @@ export function CommandPalette() {
                               src={row.item.coverImage}
                               alt=""
                               fill
+                              quality={95}
                               sizes="32px"
                               className="object-cover"
                             />
@@ -338,11 +339,12 @@ export function CommandPalette() {
                     {row.kind === "media" && (
                       <>
                         <span className="relative h-11 w-8 shrink-0 overflow-hidden rounded bg-elevated">
-                          {row.media.coverImage?.medium && (
+                          {(row.media.coverImage?.extraLarge ?? row.media.coverImage?.large ?? row.media.coverImage?.medium) && (
                             <Image
-                              src={row.media.coverImage.medium}
+                              src={row.media.coverImage.extraLarge ?? row.media.coverImage.large ?? row.media.coverImage.medium}
                               alt=""
                               fill
+                              quality={95}
                               sizes="32px"
                               className="object-cover"
                             />

@@ -32,6 +32,7 @@ export function MediaCard({ media, isInList, onAdd, priority = false }: MediaCar
             alt={title}
             fill
             priority={priority}
+            fetchPriority={priority ? "high" : undefined}
             quality={95}
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 300px"

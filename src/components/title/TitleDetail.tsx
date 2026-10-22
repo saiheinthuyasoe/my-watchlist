@@ -222,6 +222,7 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
               alt=""
               fill
               priority
+              quality={95}
               sizes="100vw"
               className="object-cover"
             />
@@ -234,12 +235,13 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
         <div className="relative -mt-20 px-4 pb-5 sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-5">
             <div className="relative h-52 w-36 shrink-0 self-center overflow-hidden rounded-xl bg-elevated shadow-2xl ring-1 ring-line sm:self-auto">
-              {media.coverImage?.large && (
+              {(media.coverImage?.extraLarge ?? media.coverImage?.large) && (
                 <Image
-                  src={media.coverImage.large}
+                  src={media.coverImage.extraLarge ?? media.coverImage.large}
                   alt={title}
                   fill
                   priority
+                  quality={95}
                   sizes="144px"
                   className="object-cover"
                 />
