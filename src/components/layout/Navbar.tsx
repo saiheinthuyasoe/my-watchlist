@@ -92,6 +92,8 @@ export function Navbar() {
             height={40}
             className="h-9 w-9 rounded-lg object-contain sm:h-10 sm:w-10"
             priority
+            quality={100}
+            unoptimized={true}
           />
           <span className="text-base font-bold tracking-tight text-fg sm:text-lg">
             MyWatchlist

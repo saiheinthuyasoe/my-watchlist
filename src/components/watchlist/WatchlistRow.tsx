@@ -29,7 +29,14 @@ export function WatchlistRow({ item, onEdit, onDelete, onBump }: WatchlistRowPro
         aria-label={`View ${title}`}
       >
         {item.coverImage ? (
-          <Image src={item.coverImage} alt="" fill sizes="44px" className="object-cover" />
+          <Image 
+            src={item.coverImage} 
+            alt="" 
+            fill 
+            sizes="44px" 
+            quality={90}
+            className="object-cover" 
+          />
         ) : null}
       </Link>
 

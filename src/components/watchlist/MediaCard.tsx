@@ -17,6 +17,7 @@ interface MediaCardProps {
 export function MediaCard({ media, isInList, onAdd, priority = false }: MediaCardProps) {
   const title = media.title.english ?? media.title.romaji;
   const score = media.averageScore ? (media.averageScore / 10).toFixed(1) : null;
+  const coverUrl = media.coverImage?.extraLarge ?? media.coverImage?.large;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface transition-all duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_oklab,var(--accent)_45%,var(--line))] hover:shadow-[0_16px_36px_-18px_var(--shadow-color)]">
@@ -25,14 +26,15 @@ export function MediaCard({ media, isInList, onAdd, priority = false }: MediaCar
         className="relative block aspect-[3/4] overflow-hidden bg-elevated focus-visible:outline-none"
         aria-label={`View details for ${title}`}
       >
-        {media.coverImage?.large ? (
+        {coverUrl ? (
           <Image
-            src={media.coverImage.large}
+            src={coverUrl}
             alt={title}
             fill
             priority={priority}
+            quality={95}
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            sizes="(max-width: 640px) 48vw, (max-width: 768px) 45vw, (max-width: 1024px) 30vw, (max-width: 1280px) 20vw, 16vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 300px"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-3xl text-subtle">?</div>

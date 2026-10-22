@@ -5,6 +5,7 @@ export interface AniListTitle {
 }
 
 export interface AniListCoverImage {
+  extraLarge?: string;
   large: string;
   medium: string;
   color: string | null;

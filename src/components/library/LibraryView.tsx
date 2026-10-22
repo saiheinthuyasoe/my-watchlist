@@ -495,9 +495,7 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-subtle">
             <Icon className="h-3.5 w-3.5" aria-hidden />
-            {config.label}
-            <span className="h-1 w-1 rounded-full bg-subtle" aria-hidden />
-            {categoryStats.total} tracked
+            {config.label}            
           </div>
           <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-fg sm:text-3xl">
             {config.heading}

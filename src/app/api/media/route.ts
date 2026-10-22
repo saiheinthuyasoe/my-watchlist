@@ -4,6 +4,33 @@ import type { AniListMedia, AniListSearchResult } from "@/types/anime";
 
 const ANILIST_API = "https://graphql.anilist.co";
 
+// Simple in-memory rate limiter
+const rateLimiter = {
+  requests: [] as number[],
+  maxRequests: 90, // AniList allows 90 requests per minute
+  windowMs: 60000, // 1 minute
+  
+  canMakeRequest(): boolean {
+    const now = Date.now();
+    // Remove requests older than the window
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    
+    if (this.requests.length >= this.maxRequests) {
+      return false;
+    }
+    
+    this.requests.push(now);
+    return true;
+  },
+  
+  getWaitTime(): number {
+    if (this.requests.length === 0) return 0;
+    const oldestRequest = this.requests[0];
+    const timeToWait = this.windowMs - (Date.now() - oldestRequest);
+    return Math.max(0, timeToWait);
+  }
+};
+
 const MEDIA_FIELDS = `
   id
   title {
@@ -12,6 +39,7 @@ const MEDIA_FIELDS = `
     native
   }
   coverImage {
+    extraLarge
     large
     medium
     color
@@ -125,6 +153,13 @@ async function anilistRequest(
   query: string,
   variables: Record<string, unknown>
 ): Promise<unknown> {
+  // Check rate limit before making request
+  if (!rateLimiter.canMakeRequest()) {
+    const waitTime = rateLimiter.getWaitTime();
+    console.warn(`Rate limit reached. Need to wait ${Math.ceil(waitTime / 1000)}s`);
+    throw new Error("Rate limit exceeded. Please try again in a moment.");
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 7000);
 
@@ -134,9 +169,11 @@ async function anilistRequest(
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        "User-Agent": "MyWatchlist/1.0 (https://github.com/yourrepo/my-watchlist)",
       },
       body: JSON.stringify({ query, variables }),
       signal: controller.signal,
+      next: { revalidate: 300 }, // Cache for 5 minutes
     });
 
     if (!response.ok) {

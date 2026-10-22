@@ -35,8 +35,9 @@ export function WatchlistCard({ item, onEdit, onDelete, onBump }: WatchlistCardP
               src={item.coverImage}
               alt={title}
               fill
+              quality={95}
               className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-              sizes="(max-width: 640px) 48vw, (max-width: 768px) 45vw, (max-width: 1024px) 30vw, (max-width: 1280px) 20vw, 16vw"
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 300px"
             />
           ) : (
             <span className="flex h-full items-center justify-center text-3xl text-subtle">

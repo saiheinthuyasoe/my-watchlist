@@ -96,6 +96,8 @@ export default function LandingPage() {
               height={40}
               className="h-10 w-10 rounded-lg object-contain"
               priority
+              quality={100}
+              unoptimized={true}
             />
             <span className="text-base font-bold tracking-tight">MyWatchlist</span>
           </Link>

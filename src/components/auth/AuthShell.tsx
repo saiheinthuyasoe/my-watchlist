@@ -22,6 +22,8 @@ export function AuthShell({ title, subtitle, children, footer, icon }: AuthShell
             height={40}
             className="h-10 w-10 rounded-lg object-contain"
             priority
+            quality={100}
+            unoptimized={true}
           />
           <span className="text-base font-bold tracking-tight text-fg">MyWatchlist</span>
         </Link>
