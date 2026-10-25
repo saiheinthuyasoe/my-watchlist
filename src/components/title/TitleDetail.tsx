@@ -35,6 +35,7 @@ import { ProgressRing } from "@/components/ui/ProgressRing";
 import { StatusBadge } from "@/components/watchlist/StatusBadge";
 import { AddToWatchlistModal } from "@/components/watchlist/AddToWatchlistModal";
 import { EditWatchlistModal } from "@/components/watchlist/EditWatchlistModal";
+import { RelatedMedia } from "@/components/title/RelatedMedia";
 
 const MEDIA_STATUS_LABELS: Record<string, string> = {
   FINISHED: "Finished airing",
@@ -674,6 +675,11 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
           )}
         </aside>
       </div>
+
+      {/* Related Media Section */}
+      {media.relations?.edges && media.relations.edges.length > 0 && (
+        <RelatedMedia relations={media.relations.edges} />
+      )}
 
       <AddToWatchlistModal
         media={media}

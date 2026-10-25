@@ -245,8 +245,23 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
   const [listGenre, setListGenre] = useState("");
   const [listSort, setListSort] = useState("updated_desc");
   const [view, setView] = useState<"grid" | "list">("grid");
-  const [listPageSize, setListPageSize] = useState(24); // Items per page
-  const [listDisplayCount, setListDisplayCount] = useState(24); // Currently displayed items
+  const listPageSize = 24; // Items per page
+  
+  // Initialize from sessionStorage or default
+  const [listDisplayCount, setListDisplayCount] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem(`listDisplayCount_${category}`);
+      return stored ? parseInt(stored, 10) : listPageSize;
+    }
+    return listPageSize;
+  });
+
+  // Sync with sessionStorage whenever count changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(`listDisplayCount_${category}`, String(listDisplayCount));
+    }
+  }, [listDisplayCount, category]);
 
   // Update tab when URL param changes
   useEffect(() => {
@@ -300,6 +315,13 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
 
   useEffect(() => {
     let cancelled = false;
+    
+    // Check if we need to restore multiple pages from sessionStorage
+    const storedPage = typeof window !== 'undefined' 
+      ? sessionStorage.getItem(`browsePage_${category}`) 
+      : null;
+    const targetPage = storedPage ? parseInt(storedPage, 10) : 1;
+    
     const options = {
       page: 1,
       perPage: 18,
@@ -320,14 +342,27 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
 
     const run = async () => {
       try {
-        const response = query
-          ? await searchMedia(query, options)
-          : await getTrending(options);
+        // Load all pages up to targetPage
+        let allResults: AniListMedia[] = [];
+        let currentPageInfo: AniListPageInfo | null = null;
+        
+        for (let page = 1; page <= targetPage; page++) {
+          const response = query
+            ? await searchMedia(query, { ...options, page })
+            : await getTrending({ ...options, page });
+          
+          allResults = [...allResults, ...response.Page.media];
+          currentPageInfo = response.Page.pageInfo;
+          
+          // Stop if we've loaded all available pages
+          if (!response.Page.pageInfo.hasNextPage) break;
+        }
+        
         if (!cancelled) {
           setBrowse({
             key: requestKey,
-            results: response.Page.media,
-            pageInfo: response.Page.pageInfo,
+            results: allResults,
+            pageInfo: currentPageInfo,
             error: null,
           });
         }
@@ -348,7 +383,7 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
     return () => {
       cancelled = true;
     };
-  }, [requestKey, query, genre, format, browseSort, config.country, advancedFilters]);
+  }, [requestKey, query, genre, format, browseSort, config.country, advancedFilters, category]);
 
   const categoryItems = useMemo(
     () => items.filter((item) => item.category === category),
@@ -399,6 +434,11 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
             }
           : previous
       );
+      
+      // Store current page in sessionStorage to persist on navigation
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(`browsePage_${category}`, String(nextPage));
+      }
     } catch (error) {
       console.error(error);
       toast.error("Couldn't load more titles", "Please try again.");
@@ -447,8 +487,24 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
   }, [categoryItems, statusFilter, listGenre, listQuery, listSort]);
 
   // Reset display count when filters change
+  const prevFiltersRef = useRef({ statusFilter, listGenre, listQuery, listSort });
+  
   useEffect(() => {
-    setListDisplayCount(listPageSize);
+    const prev = prevFiltersRef.current;
+    const filtersChanged = 
+      prev.statusFilter !== statusFilter ||
+      prev.listGenre !== listGenre ||
+      prev.listQuery !== listQuery ||
+      prev.listSort !== listSort;
+    
+    if (filtersChanged) {
+      // Filters actually changed - reset pagination
+      console.log('[LibraryView] Filters changed, resetting pagination');
+      setListDisplayCount(listPageSize);
+      
+      // Update ref for next comparison
+      prevFiltersRef.current = { statusFilter, listGenre, listQuery, listSort };
+    }
   }, [statusFilter, listGenre, listQuery, listSort, listPageSize]);
 
   const displayedList = useMemo(() => {
@@ -458,7 +514,9 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
   const hasMoreListItems = filteredList.length > listDisplayCount;
 
   const loadMoreListItems = () => {
-    setListDisplayCount((prev) => Math.min(prev + listPageSize, filteredList.length));
+    const newCount = Math.min(listDisplayCount + listPageSize, filteredList.length);
+    console.log('[LibraryView] Load more clicked, newCount:', newCount);
+    setListDisplayCount(newCount);
   };
 
   const activeFilters = Boolean(

@@ -4,6 +4,7 @@ import { MobileNav } from "@/components/layout/MobileNav";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -36,6 +37,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </footer>
       <MobileNav />
       <CommandPalette />
+      <ScrollToTop />
     </div>
   );
 }

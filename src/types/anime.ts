@@ -27,6 +27,20 @@ export interface AniListAiringEpisode {
   timeUntilAiring: number;
 }
 
+export interface AniListRelation {
+  id: number;
+  relationType: "SEQUEL" | "PREQUEL" | "PARENT" | "SIDE_STORY" | "CHARACTER" | "SUMMARY" | "ALTERNATIVE" | "SPIN_OFF" | "OTHER" | "SOURCE" | "COMPILATION" | "CONTAINS";
+  node: {
+    id: number;
+    title: AniListTitle;
+    coverImage: AniListCoverImage;
+    format: "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC" | null;
+    status: "FINISHED" | "RELEASING" | "NOT_YET_RELEASED" | "CANCELLED" | "HIATUS";
+    seasonYear: number | null;
+    type: "ANIME" | "MANGA";
+  };
+}
+
 export interface AniListMedia {
   id: number;
   title: AniListTitle;
@@ -54,6 +68,7 @@ export interface AniListMedia {
   nextAiringEpisode?: AniListAiringEpisode | null;
   siteUrl?: string | null;
   source?: string | null;
+  relations?: { edges: AniListRelation[] };
 }
 
 export interface AniListPageInfo {

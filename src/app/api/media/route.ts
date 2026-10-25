@@ -86,6 +86,29 @@ const DETAIL_FIELDS = `
   }
   siteUrl
   source
+  relations {
+    edges {
+      id
+      relationType
+      node {
+        id
+        type
+        title {
+          romaji
+          english
+          native
+        }
+        coverImage {
+          extraLarge
+          large
+          medium
+        }
+        format
+        status
+        seasonYear
+      }
+    }
+  }
 `;
 
 const SORT_VALUES = [
