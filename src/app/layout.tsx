@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { WatchlistProvider } from "@/lib/watchlist-context";
+import { PreferencesProvider } from "@/lib/preferences-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme";
 import { ToastProvider } from "@/components/ui/Toast";
 
@@ -32,17 +33,29 @@ export const metadata: Metadata = {
     "AniList",
   ],
   authors: [{ name: "MyWatchlist" }],
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
     title: "MyWatchlist — Track Anime & Donghua",
     description:
       "Track every episode, rate what you love, and see your viewing stats in one place.",
     type: "website",
     siteName: "MyWatchlist",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
   twitter: {
     card: "summary",
     title: "MyWatchlist",
     description: "Track anime and donghua, episode by episode.",
+    images: ["/twitter-image.png"],
   },
   robots: { index: true, follow: true },
 };
@@ -79,7 +92,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider>
           <ToastProvider>
             <AuthProvider>
-              <WatchlistProvider>{children}</WatchlistProvider>
+              <PreferencesProvider>
+                <WatchlistProvider>{children}</WatchlistProvider>
+              </PreferencesProvider>
             </AuthProvider>
           </ToastProvider>
         </ThemeProvider>

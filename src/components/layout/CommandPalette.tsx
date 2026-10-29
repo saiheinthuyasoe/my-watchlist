@@ -18,6 +18,7 @@ import type { LucideIcon } from "lucide-react";
 import { searchMedia } from "@/lib/anilist";
 import { OPEN_PALETTE_EVENT } from "@/lib/constants";
 import { useWatchlist } from "@/lib/watchlist-context";
+import { usePreferences } from "@/lib/preferences-context";
 import { cn } from "@/lib/utils";
 import type { WatchlistItem } from "@/types/watchlist";
 import type { AniListMedia } from "@/types/anime";
@@ -49,6 +50,7 @@ function isTypingTarget(target: EventTarget | null) {
 export function CommandPalette() {
   const router = useRouter();
   const { items, byAniListId } = useWatchlist();
+  const { preferences } = usePreferences();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [remote, setRemote] = useState<AniListMedia[]>([]);
@@ -120,7 +122,8 @@ export function CommandPalette() {
     const timer = window.setTimeout(async () => {
       setSearching(true);
       try {
-        const result = await searchMedia(trimmed, { perPage: 6 });
+        // Use anime provider for command palette search (could be improved to search both)
+        const result = await searchMedia(trimmed, { perPage: 6, provider: preferences.animeProvider });
         if (!ignore) setRemote(result.Page.media);
       } catch {
         if (!ignore) setRemote([]);

@@ -112,3 +112,26 @@ service cloud.firestore {
     }
   }
 }
+
+    // User preferences collection rules
+    match /userPreferences/{userId} {
+      // Users can read their own preferences
+      allow read: if isSignedIn() && isOwner(userId);
+      
+      // Users can write their own preferences
+      allow write: if isSignedIn() 
+                   && isOwner(userId)
+                   && validateUserPreferences();
+      
+      function validateUserPreferences() {
+        let data = incomingData();
+        return data.keys().hasAll(['animeProvider', 'donghuaProvider'])
+        && data.animeProvider in ['anilist', 'tmdb']
+        && data.donghuaProvider in ['anilist', 'tmdb']
+        && (!data.keys().hasAny(['createdAt']) || data.createdAt is int)
+        && (!data.keys().hasAny(['updatedAt']) || data.updatedAt is int)
+        && (!data.keys().hasAny(['theme']) || data.theme in ['light', 'dark', 'system']);
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ import {
 import { getTrending, searchMedia } from "@/lib/anilist";
 import { useAuth } from "@/lib/auth-context";
 import { useWatchlist } from "@/lib/watchlist-context";
+import { usePreferences } from "@/lib/preferences-context";
 import { computeStats } from "@/lib/stats";
 import { GENRES, SORT_OPTIONS } from "@/lib/constants";
 import { cn, getProgressPercent } from "@/lib/utils";
@@ -192,6 +193,7 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
   const config = CATEGORY_CONFIG[category];
   const toast = useToast();
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const router = useRouter();
   const pathname = usePathname();
   const {
@@ -347,9 +349,10 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
         let currentPageInfo: AniListPageInfo | null = null;
         
         for (let page = 1; page <= targetPage; page++) {
+          const provider = category === "donghua" ? preferences.donghuaProvider : preferences.animeProvider;
           const response = query
-            ? await searchMedia(query, { ...options, page })
-            : await getTrending({ ...options, page });
+            ? await searchMedia(query, { ...options, page, provider })
+            : await getTrending({ ...options, page, provider });
           
           allResults = [...allResults, ...response.Page.media];
           currentPageInfo = response.Page.pageInfo;
@@ -421,9 +424,10 @@ export function LibraryView({ category }: { category: AnimeCategory }) {
         durationMax: advancedFilters.durationMax ? parseInt(advancedFilters.durationMax) : null,
         countryOfOrigin: advancedFilters.countryOfOrigin || null,
       };
+      const provider = category === "donghua" ? preferences.donghuaProvider : preferences.animeProvider;
       const response = query
-        ? await searchMedia(query, options)
-        : await getTrending(options);
+        ? await searchMedia(query, { ...options, provider })
+        : await getTrending({ ...options, provider });
       setBrowse((previous) =>
         previous && previous.key === requestKey
           ? {

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  Database,
   Download,
   FileJson,
   FileSpreadsheet,
@@ -18,7 +19,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useWatchlist } from "@/lib/watchlist-context";
+import { usePreferences } from "@/lib/preferences-context";
 import { useToast } from "@/components/ui/Toast";
+import type { TMDBApiProvider } from "@/types/tmdb";
 import {
   downloadFile,
   exportFilename,
@@ -43,6 +46,7 @@ export function SettingsContent() {
     resetPassword,
   } = useAuth();
   const { items, importRows, clearAll, loading } = useWatchlist();
+  const { preferences, setAnimeProvider, setDonghuaProvider } = usePreferences();
   const toast = useToast();
 
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
@@ -51,6 +55,7 @@ export function SettingsContent() {
   const [sendingReset, setSendingReset] = useState(false);
   const [importing, setImporting] = useState(false);
   const [clearOpen, setClearOpen] = useState(false);
+  const [changingProvider, setChangingProvider] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
@@ -149,6 +154,44 @@ export function SettingsContent() {
     router.push("/");
   };
 
+  const handleChangeAnimeProvider = async (provider: TMDBApiProvider) => {
+    if (!user) return;
+    
+    try {
+      setChangingProvider(true);
+      await setAnimeProvider(provider);
+      toast.success(
+        "Anime provider updated",
+        provider === "tmdb"
+          ? "Now using TMDB for anime data."
+          : "Now using AniList for anime data."
+      );
+    } catch (error) {
+      toast.error("Failed to update provider", "Please try again.");
+    } finally {
+      setChangingProvider(false);
+    }
+  };
+
+  const handleChangeDonghuaProvider = async (provider: TMDBApiProvider) => {
+    if (!user) return;
+    
+    try {
+      setChangingProvider(true);
+      await setDonghuaProvider(provider);
+      toast.success(
+        "Donghua provider updated",
+        provider === "tmdb"
+          ? "Now using TMDB for better donghua episode tracking."
+          : "Now using AniList for donghua data."
+      );
+    } catch (error) {
+      toast.error("Failed to update provider", "Please try again.");
+    } finally {
+      setChangingProvider(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header>
@@ -223,6 +266,211 @@ export function SettingsContent() {
         <div className="mt-4">
           <ThemeSegmented />
         </div>
+      </section>
+
+      {/* API Provider */}
+      <section className="rounded-2xl border border-line bg-surface p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+              <Database className="h-4 w-4" aria-hidden />
+              Data Sources
+            </h2>
+            <p className="mt-0.5 text-xs text-muted">
+              Choose which API to use for each category.
+            </p>
+          </div>
+        </div>
+
+        {/* Anime Provider */}
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">
+            Anime Provider
+          </h3>
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              onClick={() => void handleChangeAnimeProvider("anilist")}
+              disabled={changingProvider}
+              className={`w-full rounded-lg border p-3 text-left transition ${
+                preferences.animeProvider === "anilist"
+                  ? "border-[var(--accent)] bg-accent/5"
+                  : "border-line bg-elevated/40 hover:border-line-strong"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-fg">AniList</span>
+                    {preferences.animeProvider === "anilist" && (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-white">
+                        Active
+                      </span>
+                    )}
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500">
+                      Recommended
+                    </span>
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted">
+                    <li><strong className="text-fg">Browse:</strong> Trending & popular titles</li>
+                    <li><strong className="text-fg">Search:</strong> Full database with metadata</li>
+                  </ul>
+                </div>
+                <div
+                  className={`h-5 w-5 shrink-0 rounded-full border-2 ${
+                    preferences.animeProvider === "anilist"
+                      ? "border-[var(--accent)] bg-[var(--accent)]"
+                      : "border-line"
+                  }`}
+                >
+                  {preferences.animeProvider === "anilist" && (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleChangeAnimeProvider("tmdb")}
+              disabled={changingProvider}
+              className={`w-full rounded-lg border p-3 text-left transition ${
+                preferences.animeProvider === "tmdb"
+                  ? "border-[var(--accent)] bg-accent/5"
+                  : "border-line bg-elevated/40 hover:border-line-strong"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-fg">TMDB</span>
+                    {preferences.animeProvider === "tmdb" && (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-white">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted">
+                    <li><strong className="text-fg">Browse:</strong> <span className="text-amber-500">Uses AniList</span> (TMDB has no browse)</li>
+                    <li><strong className="text-fg">Search:</strong> Accurate episode counts</li>
+                  </ul>
+                </div>
+                <div
+                  className={`h-5 w-5 shrink-0 rounded-full border-2 ${
+                    preferences.animeProvider === "tmdb"
+                      ? "border-[var(--accent)] bg-[var(--accent)]"
+                      : "border-line"
+                  }`}
+                >
+                  {preferences.animeProvider === "tmdb" && (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Donghua Provider */}
+        <div className="mt-5 border-t border-line pt-5">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-subtle">
+            Donghua Provider
+          </h3>
+          <div className="mt-2 space-y-2">
+            <button
+              type="button"
+              onClick={() => void handleChangeDonghuaProvider("tmdb")}
+              disabled={changingProvider}
+              className={`w-full rounded-lg border p-3 text-left transition ${
+                preferences.donghuaProvider === "tmdb"
+                  ? "border-[var(--accent)] bg-accent/5"
+                  : "border-line bg-elevated/40 hover:border-line-strong"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-fg">TMDB</span>
+                    {preferences.donghuaProvider === "tmdb" && (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-white">
+                        Active
+                      </span>
+                    )}
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-500">
+                      Recommended
+                    </span>
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted">
+                    <li><strong className="text-fg">Browse:</strong> <span className="text-amber-500">Uses AniList</span> (TMDB has no browse)</li>
+                    <li><strong className="text-fg">Search:</strong> Accurate total episodes (no season splits)</li>
+                  </ul>
+                </div>
+                <div
+                  className={`h-5 w-5 shrink-0 rounded-full border-2 ${
+                    preferences.donghuaProvider === "tmdb"
+                      ? "border-[var(--accent)] bg-[var(--accent)]"
+                      : "border-line"
+                  }`}
+                >
+                  {preferences.donghuaProvider === "tmdb" && (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleChangeDonghuaProvider("anilist")}
+              disabled={changingProvider}
+              className={`w-full rounded-lg border p-3 text-left transition ${
+                preferences.donghuaProvider === "anilist"
+                  ? "border-[var(--accent)] bg-accent/5"
+                  : "border-line bg-elevated/40 hover:border-line-strong"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-fg">AniList</span>
+                    {preferences.donghuaProvider === "anilist" && (
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-medium text-white">
+                        Active
+                      </span>
+                    )}
+                  </div>
+                  <ul className="mt-1.5 space-y-0.5 text-[11px] text-muted">
+                    <li><strong className="text-fg">Browse:</strong> Trending & popular titles</li>
+                    <li><strong className="text-fg">Search:</strong> Full database, episodes may split by season</li>
+                  </ul>
+                </div>
+                <div
+                  className={`h-5 w-5 shrink-0 rounded-full border-2 ${
+                    preferences.donghuaProvider === "anilist"
+                      ? "border-[var(--accent)] bg-[var(--accent)]"
+                      : "border-line"
+                  }`}
+                >
+                  {preferences.donghuaProvider === "anilist" && (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <p className="mt-3 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-[11px] text-muted">
+          <strong className="text-fg">How it works:</strong> When you select TMDB and browse (without searching), AniList is used automatically since TMDB doesn't have a browse/trending API. When you search for a specific title, your selected provider is used for accurate data.
+        </p>
       </section>
 
       {/* Data */}
@@ -327,7 +575,38 @@ export function SettingsContent() {
       </section>
 
       <p className="pb-2 text-center text-[11px] text-subtle">
-        Metadata and imagery provided by AniList. This app is not affiliated with AniList.
+        Metadata provided by{" "}
+        {preferences.animeProvider === "tmdb" || preferences.donghuaProvider === "tmdb" ? (
+          <>
+            <a
+              href="https://www.themoviedb.org/"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-fg"
+            >
+              TMDB
+            </a>{" "}
+            and{" "}
+            <a
+              href="https://anilist.co"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-fg"
+            >
+              AniList
+            </a>
+          </>
+        ) : (
+          <a
+            href="https://anilist.co"
+            target="_blank"
+            rel="noreferrer"
+            className="underline hover:text-fg"
+          >
+            AniList
+          </a>
+        )}
+        . This app is not affiliated with {preferences.animeProvider === "tmdb" || preferences.donghuaProvider === "tmdb" ? "TMDB or AniList" : "AniList"}.
       </p>
 
       <ConfirmDialog

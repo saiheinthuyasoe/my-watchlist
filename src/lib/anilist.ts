@@ -5,19 +5,21 @@ import type {
   AniListSort,
   MediaQueryOptions,
 } from "@/types/anime";
+import type { TMDBApiProvider } from "@/types/tmdb";
 import { FALLBACK_ANIME, FALLBACK_DONGHUA } from "@/lib/fallback-data";
 
 const DEFAULT_PER_PAGE = 18;
 
 function buildParams(
   action: "search" | "trending",
-  options: MediaQueryOptions & { query?: string }
+  options: MediaQueryOptions & { query?: string; provider?: TMDBApiProvider }
 ): URLSearchParams {
   const params = new URLSearchParams({
     action,
     page: String(options.page ?? 1),
     perPage: String(options.perPage ?? DEFAULT_PER_PAGE),
   });
+  if (options.provider) params.set("provider", options.provider);
   if (options.query?.trim()) params.set("query", options.query.trim());
   if (options.country) params.set("country", options.country);
   if (options.genre) params.set("genre", options.genre);
@@ -122,34 +124,39 @@ async function request(params: URLSearchParams): Promise<AniListSearchResult> {
 /** Search Anime or Donghua by title. */
 export async function searchMedia(
   query: string,
-  options: MediaQueryOptions = {}
+  options: MediaQueryOptions & { provider?: TMDBApiProvider } = {}
 ): Promise<AniListSearchResult> {
   if (!query.trim()) return fallbackResult({ ...options, query: "" });
   try {
     return await request(buildParams("search", { ...options, query }));
   } catch (error) {
-    console.warn("AniList search fell back to curated data:", error);
+    console.warn("Search fell back to curated data:", error);
     return fallbackResult({ ...options, query });
   }
 }
 
 /** Trending / popular titles, optionally filtered by genre or format. */
 export async function getTrending(
-  options: MediaQueryOptions = {}
+  options: MediaQueryOptions & { provider?: TMDBApiProvider } = {}
 ): Promise<AniListSearchResult> {
   try {
     return await request(buildParams("trending", options));
   } catch (error) {
-    console.warn("AniList trending fell back to curated data:", error);
+    console.warn("Trending fell back to curated data:", error);
     return fallbackResult(options);
   }
 }
 
 /** Full details for a single title. Returns null if it cannot be found. */
-export async function getMediaById(id: number): Promise<AniListMedia | null> {
-  // Always fetch from AniList API first to get complete details (studios, source, etc.)
+export async function getMediaById(
+  id: number,
+  provider?: TMDBApiProvider
+): Promise<AniListMedia | null> {
+  // Fetch from selected API (AniList or TMDB) first to get complete details
   try {
     const params = new URLSearchParams({ action: "detail", id: String(id) });
+    if (provider) params.set("provider", provider);
+    
     const response = await fetch(`/api/media?${params.toString()}`);
     if (!response.ok) {
       // Try fallback as last resort
@@ -161,7 +168,7 @@ export async function getMediaById(id: number): Promise<AniListMedia | null> {
     const data = (await response.json()) as { Media: AniListMedia | null };
     return data.Media ?? null;
   } catch (error) {
-    console.warn("AniList detail request failed, trying fallback:", error);
+    console.warn("Detail request failed, trying fallback:", error);
     // Use fallback only if API completely fails
     const local = [...FALLBACK_ANIME, ...FALLBACK_DONGHUA].find(
       (entry) => entry.id === id

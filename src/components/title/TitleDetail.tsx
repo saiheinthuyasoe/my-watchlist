@@ -21,6 +21,7 @@ import {
 import { getMediaById } from "@/lib/anilist";
 import { useAuth } from "@/lib/auth-context";
 import { useWatchlist } from "@/lib/watchlist-context";
+import { usePreferences } from "@/lib/preferences-context";
 import { stripHtml } from "@/lib/utils";
 import type { AniListMedia } from "@/types/anime";
 import type { AnimeCategory, WatchStatus } from "@/types/watchlist";
@@ -76,6 +77,7 @@ function DetailSkeleton() {
 export function TitleDetail({ mediaId }: { mediaId: number }) {
   const router = useRouter();
   const { user } = useAuth();
+  const { preferences } = usePreferences();
   const {
     items,
     byAniListId,
@@ -103,21 +105,46 @@ export function TitleDetail({ mediaId }: { mediaId: number }) {
   useEffect(() => {
     if (invalidId) return;
     let cancelled = false;
-    getMediaById(mediaId)
-      .then((result) => {
-        if (!cancelled) {
-          setFetched({ key: fetchKey, media: result, failed: result === null });
+
+    const fetchMedia = async () => {
+      // First, check if this ID exists in the watchlist to determine the category
+      const existingEntry = items.find(item => item.anilistId === mediaId);
+      const category = existingEntry?.category || null;
+
+      // Determine which provider to try first based on category
+      // If no category known, try both providers
+      const providers = category === "donghua"
+        ? [preferences.donghuaProvider, preferences.animeProvider]
+        : category === "anime"
+        ? [preferences.animeProvider, preferences.donghuaProvider]
+        : [preferences.animeProvider, preferences.donghuaProvider]; // Try both if unknown
+
+      // Try providers in order
+      for (const provider of providers) {
+        try {
+          const result = await getMediaById(mediaId, provider);
+          if (!cancelled && result) {
+            setFetched({ key: fetchKey, media: result, failed: false });
+            return; // Success, exit
+          }
+        } catch (error) {
+          // Continue to next provider
+          console.warn(`Failed to fetch from ${provider}:`, error);
         }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFetched({ key: fetchKey, media: null, failed: true });
-        }
-      });
+      }
+
+      // All providers failed
+      if (!cancelled) {
+        setFetched({ key: fetchKey, media: null, failed: true });
+      }
+    };
+
+    void fetchMedia();
+
     return () => {
       cancelled = true;
     };
-  }, [fetchKey, invalidId, mediaId]);
+  }, [fetchKey, invalidId, mediaId, preferences.animeProvider, preferences.donghuaProvider, items]);
 
   const loading = !invalidId && fetched?.key !== fetchKey;
   const media = fetched?.key === fetchKey ? fetched.media : null;

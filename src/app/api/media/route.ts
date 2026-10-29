@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { FALLBACK_ANIME, FALLBACK_DONGHUA } from "@/lib/fallback-data";
 import type { AniListMedia, AniListSearchResult } from "@/types/anime";
+import {
+  searchTMDB,
+  getTVShowById,
+  convertTMDBToAniList,
+  convertTMDBSearchToAniList,
+  calculateTotalEpisodes,
+} from "@/lib/tmdb";
+import type { TMDBApiProvider } from "@/types/tmdb";
 
 const ANILIST_API = "https://graphql.anilist.co";
 
@@ -308,6 +316,7 @@ function json(body: unknown, cacheStatus: "HIT" | "MISS" | "BYPASS") {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action") ?? "trending";
+  const provider = (searchParams.get("provider") ?? "anilist") as TMDBApiProvider;
   const query = (searchParams.get("query") ?? "").trim();
   const country = searchParams.get("country");
   const genre = searchParams.get("genre");
@@ -374,6 +383,28 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "A valid id is required" }, { status: 400 });
     }
 
+    // TMDB Provider
+    if (provider === "tmdb") {
+      try {
+        const tmdbShow = await getTVShowById(id);
+        const media = convertTMDBToAniList(tmdbShow);
+        // Calculate accurate total episodes across all seasons
+        const totalEpisodes = calculateTotalEpisodes(tmdbShow);
+        media.episodes = totalEpisodes;
+        
+        const body = { Media: media };
+        writeCache(cacheKey, body);
+        return json(body, "MISS");
+      } catch (error) {
+        console.warn("TMDB detail failed:", error);
+        return NextResponse.json(
+          { error: "Could not load this title from TMDB" },
+          { status: 502 }
+        );
+      }
+    }
+
+    // AniList Provider (default)
     // Always fetch from AniList to get complete detailed information (studios, source, etc.)
     // Don't use fallback data for details as it lacks comprehensive fields
     try {
@@ -418,6 +449,50 @@ export async function GET(request: Request) {
   // ── Search / Trending ─────────────────────────────────────────────────────
   const isSearch = action === "search" && query.length > 0;
 
+  // TMDB Provider
+  if (provider === "tmdb") {
+    if (isSearch) {
+      try {
+        const tmdbResults = await searchTMDB(query, page);
+        const media = tmdbResults.results.map((result) =>
+          convertTMDBSearchToAniList(result)
+        );
+
+        const body: AniListSearchResult = {
+          Page: {
+            media,
+            pageInfo: {
+              total: tmdbResults.total_results,
+              currentPage: tmdbResults.page,
+              lastPage: tmdbResults.total_pages,
+              hasNextPage: tmdbResults.page < tmdbResults.total_pages,
+            },
+          },
+        };
+
+        writeCache(cacheKey, body);
+        return json(body, "MISS");
+      } catch (error) {
+        console.warn("TMDB search failed:", error);
+        return json(
+          {
+            Page: {
+              media: [],
+              pageInfo: { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false },
+            },
+          },
+          "BYPASS"
+        );
+      }
+    } else {
+      // TMDB doesn't have a "trending" endpoint like AniList
+      // Automatically fall back to AniList for browse/trending
+      console.log("TMDB doesn't support trending, falling back to AniList");
+      // Don't return error, let it continue to AniList provider below
+    }
+  }
+
+  // AniList Provider (default) or fallback when TMDB doesn't support the action
   // AniList treats explicit `null` filter arguments as real filters (returning
   // zero results), so only send the arguments the caller actually used.
   const declarations = ["$page: Int", "$perPage: Int"];
